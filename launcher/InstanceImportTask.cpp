@@ -269,25 +269,6 @@ void InstanceImportTask::extractFinished()
     }
 }
 
-bool installIcon(QString root, QString instIconKey)
-{
-    auto importIconPath = IconUtils::findBestIconIn(root, instIconKey);
-    if (importIconPath.isNull() || !QFile::exists(importIconPath))
-        importIconPath = IconUtils::findBestIconIn(root, "icon.png");
-    if (importIconPath.isNull() || !QFile::exists(importIconPath))
-        importIconPath = IconUtils::findBestIconIn(FS::PathCombine(root, "overrides"), "icon.png");
-    if (!importIconPath.isNull() && QFile::exists(importIconPath)) {
-        // import icon
-        auto iconList = APPLICATION->icons();
-        if (iconList->iconFileExists(instIconKey)) {
-            iconList->deleteIcon(instIconKey);
-        }
-        iconList->installIcon(importIconPath, instIconKey + "." + QFileInfo(importIconPath).suffix());
-        return true;
-    }
-    return false;
-}
-
 void InstanceImportTask::processFlame()
 {
     shared_qobject_ptr<FlameCreationTask> inst_creation_task = nullptr;
@@ -317,7 +298,7 @@ void InstanceImportTask::processFlame()
     if (m_instIcon == "default") {
         auto iconKey = QString("Flame_%1_Icon").arg(name());
 
-        if (installIcon(m_stagingPath, iconKey)) {
+        if (IconUtils::importIcon(m_stagingPath, iconKey)) {
             m_instIcon = iconKey;
         }
     }
@@ -376,7 +357,7 @@ void InstanceImportTask::processMultiMC()
     } else {
         m_instIcon = instance.iconKey();
 
-        installIcon(instance.instanceRoot(), m_instIcon);
+        IconUtils::importIcon(instance.instanceRoot(), m_instIcon);
     }
     emitSucceeded();
 }
@@ -417,7 +398,7 @@ void InstanceImportTask::processModrinth()
     if (m_instIcon == "default") {
         auto iconKey = QString("Modrinth_%1_Icon").arg(name());
 
-        if (installIcon(m_stagingPath, iconKey)) {
+        if (IconUtils::importIcon(m_stagingPath, iconKey)) {
             m_instIcon = iconKey;
         }
     }

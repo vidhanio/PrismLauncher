@@ -42,6 +42,11 @@ namespace IconUtils {
 // Given a folder and an icon key, find 'best' of the icons with the given key in there and return its path
 QString findBestIconIn(const QString& folder, const QString& iconKey);
 
+// Looks for an icon matching iconKey, or literally named "icon.png" (optionally inside an
+// "overrides" subfolder, matching CurseForge/Modrinth pack layouts), in the given folder. If
+// found, imports it into the icon list under iconKey. Returns whether an icon was imported.
+bool importIcon(const QString& root, const QString& iconKey);
+
 // Get icon file type filter for file browser dialogs
 QString getIconFilter();
 

@@ -36,7 +36,11 @@
 #include "IconUtils.h"
 
 #include <QDirIterator>
+#include <QFile>
+#include <QFileInfo>
+#include "Application.h"
 #include "FileSystem.h"
+#include "icons/IconList.h"
 
 namespace {
 static const QStringList validIconExtensions = { { "svg", "png", "ico", "gif", "jpg", "jpeg", "webp" } };
@@ -56,6 +60,24 @@ QString findBestIconIn(const QString& folder, const QString& iconKey)
             return fileInfo.absoluteFilePath();
     }
     return {};
+}
+
+bool importIcon(const QString& root, const QString& iconKey)
+{
+    auto importIconPath = findBestIconIn(root, iconKey);
+    if (importIconPath.isNull() || !QFile::exists(importIconPath))
+        importIconPath = findBestIconIn(root, "icon.png");
+    if (importIconPath.isNull() || !QFile::exists(importIconPath))
+        importIconPath = findBestIconIn(FS::PathCombine(root, "overrides"), "icon.png");
+    if (importIconPath.isNull() || !QFile::exists(importIconPath))
+        return false;
+
+    auto iconList = APPLICATION->icons();
+    if (iconList->iconFileExists(iconKey)) {
+        iconList->deleteIcon(iconKey);
+    }
+    iconList->installIcon(importIconPath, iconKey + "." + QFileInfo(importIconPath).suffix());
+    return true;
 }
 
 QString getIconFilter()

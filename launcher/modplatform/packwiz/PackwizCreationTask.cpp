@@ -22,6 +22,7 @@
 #include <QEventLoop>
 
 #include "FileSystem.h"
+#include "icons/IconUtils.h"
 #include "minecraft/MinecraftInstance.h"
 #include "modplatform/packwiz/PackwizInstallerTask.h"
 #include "settings/INISettingsObject.h"
@@ -59,7 +60,6 @@ std::unique_ptr<MinecraftInstance> CreationTask::createInstance()
     // this entirely if the file doesn't already exist
     FS::write(FS::PathCombine(m_stagingPath, "mmc-pack.json"), QByteArray(R"({"formatVersion": 1, "components": []})"));
 
-    instance->setIconKey(m_instIcon != "default" ? m_instIcon : "packwiz");
     instance->setManagedPack("packwiz", "", m_packName, "", m_packVersion);
     instance->settings()->set("ManagedPackURL", m_packTomlUrl);
     instance->setName(name());
@@ -94,6 +94,17 @@ std::unique_ptr<MinecraftInstance> CreationTask::createInstance()
 
     if (!success)
         return nullptr;
+
+    // Packwiz has no icon concept of its own, but a pack author can still ship an icon.png as a
+    // regular managed file (the same convention Modrinth/CurseForge packs use inside .minecraft),
+    // which only exists on disk now that the sync has actually placed files into gameRoot
+    if (m_instIcon != "default") {
+        instance->setIconKey(m_instIcon);
+    } else {
+        auto iconKey = QString("Packwiz_%1_Icon").arg(m_packName);
+        instance->setIconKey(IconUtils::importIcon(gameRoot, iconKey) ? iconKey : "packwiz");
+    }
+    instance->saveNow();
 
     return instance;
 }
