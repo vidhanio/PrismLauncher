@@ -48,6 +48,7 @@
 
 #include "modplatform/flame/FlameInstanceCreationTask.h"
 #include "modplatform/modrinth/ModrinthInstanceCreationTask.h"
+#include "modplatform/packwiz/PackwizCreationTask.h"
 #include "modplatform/technic/TechnicPackProcessor.h"
 
 #include "settings/INISettingsObject.h"
@@ -55,6 +56,7 @@
 
 #include "net/ApiDownload.h"
 
+#include <QFile>
 #include <QFileInfo>
 #include <QtConcurrentRun>
 #include <memory>
@@ -80,7 +82,7 @@ void InstanceImportTask::executeTask()
 
     if (m_sourceUrl.isLocalFile()) {
         m_archivePath = m_sourceUrl.toLocalFile();
-        processZipPack();
+        determinePackType();
     } else {
         setStatus(tr("Downloading modpack:\n%1").arg(m_sourceUrl.toString()));
 
@@ -99,7 +101,7 @@ void InstanceImportTask::downloadFromUrl()
     auto filesNetJob = makeShared<NetJob>(tr("Modpack download"), APPLICATION->network());
     filesNetJob->addNetAction(Net::ApiDownload::makeCached(m_sourceUrl, entry));
 
-    connect(filesNetJob.get(), &NetJob::succeeded, this, &InstanceImportTask::processZipPack);
+    connect(filesNetJob.get(), &NetJob::succeeded, this, &InstanceImportTask::determinePackType);
     connect(filesNetJob.get(), &NetJob::progress, this, &InstanceImportTask::setProgress);
     connect(filesNetJob.get(), &NetJob::stepProgress, this, &InstanceImportTask::propagateStepProgress);
     connect(filesNetJob.get(), &NetJob::failed, this, &InstanceImportTask::emitFailed);
@@ -116,6 +118,22 @@ QString cleanPath(QString path)
     if (result.startsWith("./"))
         result = result.mid(2);
     return result;
+}
+
+void InstanceImportTask::determinePackType()
+{
+    // packwiz packs are referenced directly by their pack.toml manifest, not a zip archive - so
+    // check for that before assuming the downloaded/local file is a zip
+    QFile file(m_archivePath);
+    if (file.open(QIODevice::ReadOnly)) {
+        if (auto pack = Packwiz::parsePackToml(file.readAll())) {
+            m_packwizPack = *pack;
+            processPackwiz();
+            return;
+        }
+    }
+
+    processZipPack();
 }
 
 void InstanceImportTask::processZipPack()
@@ -403,6 +421,50 @@ void InstanceImportTask::processModrinth()
             m_instIcon = iconKey;
         }
     }
+    inst_creation_task->setIcon(m_instIcon);
+    inst_creation_task->setGroup(m_instGroup);
+    inst_creation_task->setConfirmUpdate(shouldConfirmUpdate());
+
+    auto weak = inst_creation_task.toWeakRef();
+    connect(inst_creation_task.get(), &Task::succeeded, this, [this, weak] {
+        if (auto sp = weak.lock()) {
+            setOverride(sp->shouldOverride(), sp->originalInstanceID());
+        }
+        emitSucceeded();
+    });
+    connect(inst_creation_task.get(), &Task::failed, this, &InstanceImportTask::emitFailed);
+    connect(inst_creation_task.get(), &Task::progress, this, &InstanceImportTask::setProgress);
+    connect(inst_creation_task.get(), &Task::stepProgress, this, &InstanceImportTask::propagateStepProgress);
+    connect(inst_creation_task.get(), &Task::status, this, &InstanceImportTask::setStatus);
+    connect(inst_creation_task.get(), &Task::details, this, &InstanceImportTask::setDetails);
+
+    connect(inst_creation_task.get(), &Task::aborted, this, &InstanceImportTask::emitAborted);
+    connect(inst_creation_task.get(), &Task::abortStatusChanged, this, &Task::setAbortable);
+    connect(inst_creation_task.get(), &Task::abortButtonTextChanged, this, &Task::setAbortButtonText);
+
+    connect(inst_creation_task.get(), &Task::warningLogged, this, [this](const QString& line) { m_Warnings.append(line); });
+
+    m_task.reset(inst_creation_task);
+    setAbortable(true);
+    m_task->start();
+}
+
+void InstanceImportTask::processPackwiz()
+{
+    // The clean path (not a file:// URI) for local files, matching what packwiz-installer itself
+    // expects on its command line
+    QString packSource = m_sourceUrl.isLocalFile() ? m_sourceUrl.toLocalFile() : m_sourceUrl.toString();
+
+    auto inst_creation_task =
+        makeShared<Packwiz::CreationTask>(m_stagingPath, m_globalSettings, packSource, m_packwizPack.name, m_packwizPack.versionSummary());
+
+    // Refine the placeholder name (derived from the URL/filename by whichever page suggested this
+    // import) now that we actually know the pack's real name/version
+    InstanceName real_name(m_packwizPack.name, m_packwizPack.versionSummary());
+    real_name.setName(modifiedName());
+    setName(real_name);
+
+    inst_creation_task->setName(*this);
     inst_creation_task->setIcon(m_instIcon);
     inst_creation_task->setGroup(m_instGroup);
     inst_creation_task->setConfirmUpdate(shouldConfirmUpdate());

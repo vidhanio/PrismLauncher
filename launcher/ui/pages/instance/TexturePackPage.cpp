@@ -41,6 +41,7 @@
 
 #include "minecraft/mod/TexturePack.h"
 
+#include "modplatform/ModIndex.h"
 #include "ui/dialogs/CustomMessageBox.h"
 #include "ui/dialogs/ProgressDialog.h"
 #include "ui/dialogs/ResourceDownloadDialog.h"
@@ -260,7 +261,7 @@ void TexturePackPage::changeTexturePackVersion()
 
     Resource& resource = m_model->at(m_filterModel->mapToSource(rows[0]).row());
 
-    if (resource.metadata() == nullptr) {
+    if (resource.metadata() == nullptr || resource.metadata()->provider == ModPlatform::ResourceProvider::PACKWIZ) {
         return;
     }
 

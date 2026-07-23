@@ -62,6 +62,7 @@
 #include "minecraft/VersionFilterData.h"
 #include "minecraft/mod/Mod.h"
 #include "minecraft/mod/ModFolderModel.h"
+#include "modplatform/ModIndex.h"
 
 #include "tasks/ConcurrentTask.h"
 #include "tasks/Task.h"
@@ -343,6 +344,11 @@ void ModFolderPage::changeModVersion()
     auto selection = m_filterModel->mapSelectionToSource(ui->treeView->selectionModel()->selection()).indexes();
     auto modsList = m_model->selectedMods(selection);
     if (modsList.length() != 1 || modsList[0]->metadata() == nullptr) {
+        return;
+    }
+    if (modsList[0]->metadata()->provider == ModPlatform::ResourceProvider::PACKWIZ) {
+        QMessageBox::information(this, tr("Managed by Packwiz"),
+                                  tr("This mod is managed by a packwiz pack and can only be changed by updating the pack itself."));
         return;
     }
 

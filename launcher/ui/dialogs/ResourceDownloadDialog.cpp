@@ -439,6 +439,9 @@ void ResourceDownloadDialog::setResourceMetadata(const std::shared_ptr<Metadata:
         case ModPlatform::ResourceProvider::FLAME:
             selectPage(Flame::id());
             break;
+        case ModPlatform::ResourceProvider::PACKWIZ:
+            // No online provider page for packwiz-managed resources; callers must guard against this
+            return;
     }
 
     setWindowTitle(tr("Change %1 version").arg(meta->name));

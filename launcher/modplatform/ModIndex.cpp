@@ -65,6 +65,8 @@ const char* ProviderCapabilities::name(ResourceProvider p)
             return "modrinth";
         case ResourceProvider::FLAME:
             return "curseforge";
+        case ResourceProvider::PACKWIZ:
+            return "packwiz";
     }
     return {};
 }
@@ -76,6 +78,8 @@ QString ProviderCapabilities::readableName(ResourceProvider p)
             return "Modrinth";
         case ResourceProvider::FLAME:
             return "CurseForge";
+        case ResourceProvider::PACKWIZ:
+            return "Packwiz";
     }
     return {};
 }
@@ -88,14 +92,25 @@ QStringList ProviderCapabilities::hashType(ResourceProvider p)
         case ResourceProvider::FLAME:
             // Try newer formats first, fall back to old format
             return { "sha1", "md5", "murmur2" };
+        case ResourceProvider::PACKWIZ:
+            // Unused: packwiz-installer verifies its own downloads against the pack.toml's declared hash
+            return {};
     }
     return {};
 }
 
 QString getMetaURL(ResourceProvider provider, QVariant projectID)
 {
-    return ((provider == ModPlatform::ResourceProvider::FLAME) ? "https://www.curseforge.com/projects/" : "https://modrinth.com/mod/") +
-           projectID.toString();
+    switch (provider) {
+        case ResourceProvider::FLAME:
+            return "https://www.curseforge.com/projects/" + projectID.toString();
+        case ResourceProvider::MODRINTH:
+            return "https://modrinth.com/mod/" + projectID.toString();
+        case ResourceProvider::PACKWIZ:
+            // No central API/project page for packwiz-provided mods
+            return {};
+    }
+    return {};
 }
 
 auto getModLoaderAsString(ModLoaderType type) -> const QString

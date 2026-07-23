@@ -77,6 +77,16 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>- Packwiz packs (pack.toml URL or file)</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item row="5" column="0" colspan="2">

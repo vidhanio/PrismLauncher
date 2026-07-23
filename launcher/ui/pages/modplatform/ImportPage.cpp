@@ -114,8 +114,10 @@ void ImportPage::updateState()
             bool isZip = QMimeDatabase().mimeTypeForUrl(url).suffixes().contains("zip");
             // mrpack is a modrinth pack
             bool isMRPack = fi.suffix() == "mrpack";
+            // packwiz packs are referenced directly by their manifest, not a zip
+            bool isPackToml = fi.suffix() == "toml";
 
-            if (fi.exists() && (isZip || isMRPack)) {
+            if (fi.exists() && (isZip || isMRPack || isPackToml)) {
                 auto extra_info = QMap(m_extra_info);
                 qDebug() << "Pack Extra Info" << extra_info << m_extra_info;
                 dialog->setSuggestedPack(fi.completeBaseName(), new InstanceImportTask(url, this, std::move(extra_info)));
@@ -206,10 +208,12 @@ void ImportPage::setExtraInfo(const QMap<QString, QString>& extra_info)
 void ImportPage::on_modpackBtn_clicked()
 {
     const QMimeType zip = QMimeDatabase().mimeTypeForName("application/zip");
-    auto filter = tr("Supported files") + QString(" (%1 *.mrpack)").arg(zip.globPatterns().join(" "));
+    auto filter = tr("Supported files") + QString(" (%1 *.mrpack *.toml)").arg(zip.globPatterns().join(" "));
     filter += ";;" + zip.filterString();
     //: Option for filtering for *.mrpack files when importing
     filter += ";;" + tr("Modrinth pack") + " (*.mrpack)";
+    //: Option for filtering for pack.toml files when importing
+    filter += ";;" + tr("Packwiz pack") + " (pack.toml)";
     const QUrl url = QFileDialog::getOpenFileUrl(this, tr("Choose modpack"), modpackUrl(), filter);
     if (url.isValid()) {
         if (url.isLocalFile()) {

@@ -39,6 +39,7 @@
 #include <QFutureWatcher>
 #include <QUrl>
 #include "InstanceTask.h"
+#include "modplatform/packwiz/PackToml.h"
 
 class InstanceImportTask : public InstanceTask {
     Q_OBJECT
@@ -56,8 +57,12 @@ class InstanceImportTask : public InstanceTask {
     void processTechnic();
     void processFlame();
     void processModrinth();
+    void processPackwiz();
 
    private slots:
+    //! Checks whether the downloaded/local file is a packwiz pack.toml before assuming it's a zip
+    //! archive - packwiz packs are referenced directly by their manifest, not a zip.
+    void determinePackType();
     void processZipPack();
     void extractFinished();
 
@@ -72,6 +77,9 @@ class InstanceImportTask : public InstanceTask {
         Flame,
         Modrinth,
     } m_modpackType = ModpackType::Unknown;
+
+    // Only populated when determinePackType() recognizes the source as a packwiz pack.toml
+    Packwiz::PackToml m_packwizPack;
 
     // Extra info we might need, that's available before, but can't be derived from
     // the source URL / the resource it points to alone.

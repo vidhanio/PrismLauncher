@@ -192,6 +192,17 @@ void V1::updateModIndex(const QDir& index_dir, Mod& mod)
                 { "version", mod.version().toString().toStdString() },
             };
             break;
+        case (ModPlatform::ResourceProvider::PACKWIZ):
+            // mod_id() holds the source pack.toml URL this file is managed by; there is no per-file
+            // project/version id, since the pack.toml itself is the sole source of truth
+            if (mod.mod_id().toString().isEmpty()) {
+                qCritical() << QString("Did not write file %1 because missing information!").arg(normalized_fname);
+                return;
+            }
+            update = toml::table{
+                { "pack-url", mod.mod_id().toString().toStdString() },
+            };
+            break;
     }
 
     toml::array loaders;
@@ -355,6 +366,9 @@ auto V1::getIndexForMod(const QDir& index_dir, QString slug) -> Mod
             mod.provider = Provider::MODRINTH;
             mod.mod_id() = stringEntry(*mod_provider_table, "mod-id");
             mod.version() = stringEntry(*mod_provider_table, "version");
+        } else if ((mod_provider_table = update_table[ModPlatform::ProviderCapabilities::name(Provider::PACKWIZ)].as_table())) {
+            mod.provider = Provider::PACKWIZ;
+            mod.mod_id() = stringEntry(*mod_provider_table, "pack-url");
         } else {
             qCritical() << QString("No mod provider on mod metadata!");
             return {};

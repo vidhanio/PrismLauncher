@@ -18,6 +18,7 @@
 
 #include "DataPackPage.h"
 #include "minecraft/PackProfile.h"
+#include "modplatform/ModIndex.h"
 #include "ui_ExternalResourcesPage.h"
 
 #include "ui/dialogs/CustomMessageBox.h"
@@ -238,7 +239,7 @@ void DataPackPage::changeDataPackVersion()
 
     Resource& resource = m_model->at(m_filterModel->mapToSource(rows[0]).row());
 
-    if (resource.metadata() == nullptr) {
+    if (resource.metadata() == nullptr || resource.metadata()->provider == ModPlatform::ResourceProvider::PACKWIZ) {
         return;
     }
 

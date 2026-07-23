@@ -120,6 +120,12 @@ void EnsureMetadataTask::executeTask()
         case (ModPlatform::ResourceProvider::FLAME):
             version_task = flameVersionsTask();
             break;
+        case (ModPlatform::ResourceProvider::PACKWIZ):
+            // Packwiz-managed resources already have their metadata written at sync time;
+            // this task should never be constructed with this provider
+            qCritical() << "EnsureMetadataTask should never be run for the Packwiz provider!";
+            emitFailed(tr("Packwiz-managed resources don't need online metadata resolution"));
+            return;
     }
 
     auto invalidade_leftover = [this] {
@@ -139,6 +145,9 @@ void EnsureMetadataTask::executeTask()
                 break;
             case (ModPlatform::ResourceProvider::FLAME):
                 project_task = flameProjectsTask();
+                break;
+            case (ModPlatform::ResourceProvider::PACKWIZ):
+                // Unreachable: guarded against above, before version_task is ever created
                 break;
         }
 

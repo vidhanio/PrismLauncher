@@ -301,11 +301,20 @@ auto ResourceUpdateDialog::ensureMetadata() -> bool
             case ModPlatform::ResourceProvider::FLAME:
                 flameTmp.push_back(resource);
                 break;
+            case ModPlatform::ResourceProvider::PACKWIZ:
+                // Never manually chosen; packwiz-managed mods always already have metadata
+                break;
         }
     };
 
     // ask the user on what provider to seach for the mod first
     for (auto* candidate : m_candidates) {
+        if (candidate->metadata() && candidate->metadata()->provider == ModPlatform::ResourceProvider::PACKWIZ) {
+            // Packwiz-managed mods are only ever updated by re-syncing against their source pack.toml,
+            // never through Prism's own update-checking
+            continue;
+        }
+
         if (candidate->status() != ResourceStatus::NoMetadata) {
             onMetadataEnsured(candidate);
             continue;
@@ -409,6 +418,9 @@ void ResourceUpdateDialog::onMetadataEnsured(Resource* resource)
         case ModPlatform::ResourceProvider::FLAME:
             m_flameToUpdate.push_back(resource);
             break;
+        case ModPlatform::ResourceProvider::PACKWIZ:
+            // Filtered out before reaching here; never queued for Prism-driven update checks
+            break;
     }
 }
 
@@ -419,6 +431,9 @@ ModPlatform::ResourceProvider next(ModPlatform::ResourceProvider p)
             return ModPlatform::ResourceProvider::FLAME;
         case ModPlatform::ResourceProvider::FLAME:
             return ModPlatform::ResourceProvider::MODRINTH;
+        case ModPlatform::ResourceProvider::PACKWIZ:
+            // Unreachable: packwiz-managed mods never enter the "try another provider" flow
+            return ModPlatform::ResourceProvider::PACKWIZ;
     }
 
     return ModPlatform::ResourceProvider::FLAME;

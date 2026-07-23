@@ -64,6 +64,7 @@
 #include "minecraft/launch/ExtractNatives.h"
 #include "minecraft/launch/LauncherPartLaunch.h"
 #include "minecraft/launch/ModMinecraftJar.h"
+#include "minecraft/launch/PackwizSyncStep.h"
 #include "minecraft/launch/PrintInstanceInfo.h"
 #include "minecraft/launch/ReconstructAssets.h"
 #include "minecraft/launch/ScanModFolders.h"
@@ -1139,6 +1140,13 @@ LaunchTask* MinecraftInstance::createLaunchTask(AuthSessionPtr session, Minecraf
     // create the .minecraft folder and server-resource-packs (workaround for Minecraft bug MCL-3732)
     {
         process->appendStep(makeShared<CreateGameFolders>(pptr));
+    }
+
+    // for packwiz-managed instances, re-sync against the source pack.toml before anything else
+    // reads mmc-pack.json or the mods folder, since a pack update may have bumped the Minecraft
+    // version or loader
+    if (isManagedPack() && getManagedPackType() == "packwiz") {
+        process->appendStep(makeShared<PackwizSyncStep>(pptr));
     }
 
     if (!targetToJoin && settings()->get("JoinServerOnLaunch").toBool()) {

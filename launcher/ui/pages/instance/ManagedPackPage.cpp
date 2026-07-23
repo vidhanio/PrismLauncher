@@ -25,6 +25,8 @@
 #include "Markdown.h"
 #include "StringUtils.h"
 
+#include "minecraft/MinecraftInstance.h"
+#include "modplatform/packwiz/PackwizInstallerTask.h"
 #include "ui/InstanceWindow.h"
 #include "ui/dialogs/CustomMessageBox.h"
 #include "ui/dialogs/ProgressDialog.h"
@@ -85,6 +87,8 @@ ManagedPackPage* ManagedPackPage::createPage(BaseInstance* inst, QString type, Q
         return new ModrinthManagedPackPage(inst, nullptr, parent);
     if (type == "flame" && (APPLICATION->capabilities() & Application::SupportsFlame))
         return new FlameManagedPackPage(inst, nullptr, parent);
+    if (type == "packwiz")
+        return new PackwizManagedPackPage(inst, nullptr, parent);
 
     return new GenericManagedPackPage(inst, nullptr, parent);
 }
@@ -534,6 +538,39 @@ void ManagedPackPage::updatePack(const QUrl& url, QString versionID, QString ver
     // Run our task then handle the result
     auto did_succeed = runUpdateTask(extracted);
     onUpdateTaskCompleted(did_succeed);
+}
+
+// PACKWIZ
+PackwizManagedPackPage::PackwizManagedPackPage(BaseInstance* inst, InstanceWindow* instance_window, QWidget* parent)
+    : ManagedPackPage(inst, instance_window, parent)
+{
+    Q_ASSERT(inst->isManagedPack());
+    // No file-based update - a local pack.toml path can just be typed/pasted into the URL field
+    // the same as a remote one
+    ui->updateFromFileButton->setVisible(false);
+    connect(ui->updateButton, &QPushButton::clicked, this, &PackwizManagedPackPage::update);
+}
+
+void PackwizManagedPackPage::update()
+{
+    auto packTomlUrl = m_inst->settings()->get("ManagedPackURL").toString().trimmed();
+    if (packTomlUrl.isEmpty()) {
+        CustomMessageBox::selectable(this, tr("Error"), tr("No pack.toml URL configured for this instance."), QMessageBox::Critical)
+            ->show();
+        return;
+    }
+
+    auto* instance = static_cast<MinecraftInstance*>(m_inst);
+    auto syncTask = Packwiz::createSyncTask(packTomlUrl, instance->gameRoot(), instance->instanceRoot());
+
+    connect(syncTask.get(), &Task::failed,
+            [this](const QString& reason) { CustomMessageBox::selectable(this, tr("Error"), reason, QMessageBox::Critical)->show(); });
+
+    ProgressDialog dlg(this);
+    dlg.setSkipButton(true, tr("Abort"));
+    dlg.execWithTask(syncTask.get());
+
+    onUpdateTaskCompleted(syncTask->wasSuccessful());
 }
 
 #include "ManagedPackPage.moc"

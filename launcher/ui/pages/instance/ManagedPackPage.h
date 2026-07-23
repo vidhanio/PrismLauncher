@@ -160,3 +160,19 @@ class FlameManagedPackPage final : public ManagedPackPage {
     ModPlatform::IndexedPack m_pack;
     FlameAPI m_api;
 };
+
+// There's no central index to browse versions from - the pack.toml itself is the only source of
+// truth, so "updating" just means re-running packwiz-installer against it in place (preserving its
+// own incremental sync state), rather than restaging a fresh instance like Modrinth/Flame updates.
+class PackwizManagedPackPage final : public ManagedPackPage {
+    Q_OBJECT
+
+   public:
+    PackwizManagedPackPage(BaseInstance* inst, InstanceWindow* instance_window, QWidget* parent = nullptr);
+    ~PackwizManagedPackPage() override = default;
+
+    QString helpPage() const override { return "packwiz-managed-pack"; }
+
+   public slots:
+    void update() override;
+};

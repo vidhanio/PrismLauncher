@@ -266,6 +266,8 @@ set(MINECRAFT_SOURCES
     minecraft/launch/EnsureOfflineLibraries.h
     minecraft/launch/ModMinecraftJar.cpp
     minecraft/launch/ModMinecraftJar.h
+    minecraft/launch/PackwizSyncStep.cpp
+    minecraft/launch/PackwizSyncStep.h
     minecraft/launch/ExtractNatives.cpp
     minecraft/launch/ExtractNatives.h
     minecraft/launch/LauncherPartLaunch.cpp
@@ -566,6 +568,14 @@ set(MODRINTH_SOURCES
 set(PACKWIZ_SOURCES
     modplatform/packwiz/Packwiz.h
     modplatform/packwiz/Packwiz.cpp
+    modplatform/packwiz/PackToml.h
+    modplatform/packwiz/PackToml.cpp
+    modplatform/packwiz/PackwizInstallerTask.h
+    modplatform/packwiz/PackwizInstallerTask.cpp
+    modplatform/packwiz/PackwizMetadataTask.h
+    modplatform/packwiz/PackwizMetadataTask.cpp
+    modplatform/packwiz/PackwizCreationTask.h
+    modplatform/packwiz/PackwizCreationTask.cpp
 )
 
 

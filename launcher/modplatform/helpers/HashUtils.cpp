@@ -17,6 +17,9 @@ Hasher::Ptr createHasher(QString file_path, ModPlatform::ResourceProvider provid
                                       ModPlatform::ProviderCapabilities::hashType(ModPlatform::ResourceProvider::MODRINTH).first());
         case ModPlatform::ResourceProvider::FLAME:
             return makeShared<Hasher>(file_path, Algorithm::Murmur2);
+        case ModPlatform::ResourceProvider::PACKWIZ:
+            // Unused: packwiz-installer verifies its own downloads, Prism never re-hashes packwiz-managed files
+            return nullptr;
         default:
             qCritical() << "[Hashing]" << "Unrecognized mod platform!";
             return nullptr;
