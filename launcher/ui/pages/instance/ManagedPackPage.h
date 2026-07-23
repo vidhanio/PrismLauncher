@@ -88,6 +88,10 @@ class ManagedPackPage : public QWidget, public BasePage {
 
     void updatePack(const QUrl& url, QString versionID = {}, QString versionName = {});
 
+    /** Explanatory text shown in the changelog area for packs without a managed ID (i.e. only
+     *  identified by a URL/file, like a custom Modrinth URL or a packwiz pack.toml). */
+    virtual QString noManagedIdChangelogText() const;
+
    protected:
     InstanceWindow* m_instance_window = nullptr;
 
@@ -172,6 +176,7 @@ class PackwizManagedPackPage final : public ManagedPackPage {
     ~PackwizManagedPackPage() override = default;
 
     QString helpPage() const override { return "packwiz-managed-pack"; }
+    QString noManagedIdChangelogText() const override;
 
    public slots:
     void update() override;

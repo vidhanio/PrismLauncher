@@ -49,7 +49,12 @@ void PackwizSyncStep::executeTask()
     });
     connect(m_syncTask.get(), &Task::aborted, this, &PackwizSyncStep::emitAborted);
     connect(m_syncTask.get(), &Task::progress, this, &Task::setProgress);
-    connect(m_syncTask.get(), &Task::status, this, [this](const QString& status) { emit logLine(status, MessageLevel::Launcher); });
+    // The per-mod detail (e.g. "Downloaded foo.jar") only ever shows up via stepProgress -
+    // createSyncTask()'s SequentialTask's own aggregate status is just "Executing task X out of Y"
+    connect(m_syncTask.get(), &Task::stepProgress, this, [this](TaskStepProgress const& progress) {
+        if (!progress.status.isEmpty())
+            emit logLine(progress.status, MessageLevel::Launcher);
+    });
 
     m_syncTask->start();
 }

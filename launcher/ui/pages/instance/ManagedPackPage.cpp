@@ -154,11 +154,7 @@ void ManagedPackPage::openedImpl()
         ui->urlLine->setText(m_inst->settings()->get("ManagedPackURL").toString().trimmed());
 
         ui->packName->setText(m_inst->name());
-        ui->changelogTextBrowser->setText(tr("This is a local modpack.\n"
-                                             "This can be updated either using a file in %1 format or an URL.\n"
-                                             "Do not use a different format than the one mentioned as it may break the instance.\n"
-                                             "Make sure you also trust the URL.\n")
-                                              .arg(displayName()));
+        ui->changelogTextBrowser->setText(noManagedIdChangelogText());
         return;
     }
     ui->urlLine->hide();
@@ -198,6 +194,15 @@ void ManagedPackPage::retranslate()
 bool ManagedPackPage::shouldDisplay() const
 {
     return m_inst->isManagedPack();
+}
+
+QString ManagedPackPage::noManagedIdChangelogText() const
+{
+    return tr("This is a local modpack.\n"
+              "This can be updated either using a file in %1 format or an URL.\n"
+              "Do not use a different format than the one mentioned as it may break the instance.\n"
+              "Make sure you also trust the URL.\n")
+        .arg(displayName());
 }
 
 bool ManagedPackPage::runUpdateTask(InstanceTask* task)
@@ -549,6 +554,13 @@ PackwizManagedPackPage::PackwizManagedPackPage(BaseInstance* inst, InstanceWindo
     // the same as a remote one
     ui->updateFromFileButton->setVisible(false);
     connect(ui->updateButton, &QPushButton::clicked, this, &PackwizManagedPackPage::update);
+}
+
+QString PackwizManagedPackPage::noManagedIdChangelogText() const
+{
+    return tr("This is a packwiz-managed pack.\n"
+              "It automatically syncs with the pack.toml URL before every launch, and can also be synced on demand with \"Sync Now\".\n"
+              "Make sure you trust the URL.\n");
 }
 
 void PackwizManagedPackPage::update()

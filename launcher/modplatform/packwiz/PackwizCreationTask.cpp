@@ -84,8 +84,10 @@ std::unique_ptr<MinecraftInstance> CreationTask::createInstance()
         m_abort = true;
         loop.quit();
     });
-    connect(m_syncTask.get(), &Task::progress, this, &Task::setProgress);
-    connect(m_syncTask.get(), &Task::status, this, &Task::setStatus);
+    // Forwards status/details/progress/stepProgress - the per-mod detail from InstallerTask's
+    // stdout parsing is only visible via stepProgress, since SequentialTask's own aggregate status
+    // is just "Executing task X out of Y"
+    propagateFromOther(m_syncTask.get());
 
     m_syncTask->start();
     loop.exec();
