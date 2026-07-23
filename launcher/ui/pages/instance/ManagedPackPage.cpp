@@ -153,7 +153,7 @@ void ManagedPackPage::openedImpl()
         ui->updateButton->setDisabled(false);
         ui->urlLine->setText(m_inst->settings()->get("ManagedPackURL").toString().trimmed());
 
-        ui->packName->setText(m_inst->name());
+        ui->packName->setText(m_inst->getManagedPackName());
         ui->changelogTextBrowser->setText(noManagedIdChangelogText());
         return;
     }

@@ -439,10 +439,16 @@ void InstanceImportTask::processPackwiz()
     auto inst_creation_task =
         makeShared<Packwiz::CreationTask>(m_stagingPath, m_globalSettings, packSource, m_packwizPack.name, m_packwizPack.versionSummary());
 
-    // Refine the placeholder name (derived from the URL/filename by whichever page suggested this
-    // import) now that we actually know the pack's real name/version
+    // Refine the placeholder name/version (derived from the URL/filename by whichever page
+    // suggested this import, before the pack.toml had been fetched) now that we know the pack's
+    // real name/version. If the user explicitly typed a different name, keep that - but
+    // modifiedName() alone can't tell an explicit override apart from the unset placeholder
+    // (it falls back to originalName()), so compare the two directly.
+    QString explicitOverride = modifiedName() != originalName() ? modifiedName() : QString();
+
     InstanceName real_name(m_packwizPack.name, m_packwizPack.versionSummary());
-    real_name.setName(modifiedName());
+    if (!explicitOverride.isEmpty())
+        real_name.setName(explicitOverride);
     setName(real_name);
 
     inst_creation_task->setName(*this);
