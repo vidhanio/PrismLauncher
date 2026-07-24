@@ -254,6 +254,19 @@ void ModFolderPage::updateMods(bool includeDeps)
         modsList = m_model->allResources();
     }
 
+    // Packwiz-managed mods are filtered out of the update check entirely (see
+    // ResourceUpdateDialog), so if that's ALL that was selected, checkCandidates() would just
+    // report "no updates" - which is misleading, since they were never actually checked at all
+    auto isPackwizManaged = [](Resource* r) { return r->metadata() && r->metadata()->provider == ModPlatform::ResourceProvider::PACKWIZ; };
+    if (!modsList.empty() && std::all_of(modsList.begin(), modsList.end(), isPackwizManaged)) {
+        QString message = modsList.size() == 1
+                               ? tr("'%1' is managed by a packwiz pack and can only be updated by updating the pack itself.")
+                                     .arg(modsList.front()->name())
+                               : tr("The selected mods are managed by a packwiz pack and can only be updated by updating the pack itself.");
+        CustomMessageBox::selectable(this, tr("Managed by Packwiz"), message)->exec();
+        return;
+    }
+
     ResourceUpdateDialog updateDialog(this, m_instance, m_model, modsList, includeDeps, profile->getModLoadersList());
     updateDialog.checkCandidates();
 
