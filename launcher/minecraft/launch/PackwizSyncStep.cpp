@@ -18,6 +18,7 @@
 
 #include "PackwizSyncStep.h"
 
+#include "FileSystem.h"
 #include "launch/LaunchTask.h"
 #include "minecraft/MinecraftInstance.h"
 #include "modplatform/packwiz/PackwizInstallerTask.h"
@@ -37,7 +38,8 @@ void PackwizSyncStep::executeTask()
 
     emit logLine(tr("Syncing packwiz pack from %1...").arg(packTomlUrl), MessageLevel::Launcher);
 
-    m_syncTask = Packwiz::createSyncTask(packTomlUrl, instance->gameRoot(), instance->instanceRoot());
+    auto javaPath = FS::ResolveExecutable(instance->settings()->get("JavaPath").toString());
+    m_syncTask = Packwiz::createSyncTask(packTomlUrl, instance->gameRoot(), instance->instanceRoot(), javaPath);
     connect(m_syncTask.get(), &Task::succeeded, this, [this] {
         emit logLine(tr("Packwiz pack synced successfully."), MessageLevel::Launcher);
         emitSucceeded();

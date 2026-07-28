@@ -39,8 +39,10 @@ class InstallerTask : public Task {
 
    public:
     // gameRoot is the instance's ".minecraft" folder (packwiz's --pack-folder);
-    // instanceRoot is the instance's root folder containing mmc-pack.json (packwiz's --multimc-folder)
-    InstallerTask(QString packTomlUrl, QString gameRoot, QString instanceRoot);
+    // instanceRoot is the instance's root folder containing mmc-pack.json (packwiz's --multimc-folder);
+    // javaPath is a resolved, ready-to-exec Java binary (see FS::ResolveExecutable) used only to
+    // run the bootstrap/installer jars - it never needs to match the instance's own configured Java
+    InstallerTask(QString packTomlUrl, QString gameRoot, QString instanceRoot, QString javaPath);
     ~InstallerTask() override = default;
 
     bool canAbort() const override { return true; }
@@ -58,6 +60,7 @@ class InstallerTask : public Task {
     QString m_packTomlUrl;
     QString m_gameRoot;
     QString m_instanceRoot;
+    QString m_javaPath;
 
     NetJob::Ptr m_bootstrapDownloadJob;
     std::shared_ptr<LoggedProcess> m_process;
@@ -65,7 +68,7 @@ class InstallerTask : public Task {
 
 // Builds the run-the-installer + tag-the-results task pair shared by instance creation, the
 // automatic pre-launch sync step, and the manual "Sync Now" button - all three just point it at
-// different (gameRoot, instanceRoot) directories.
-Task::Ptr createSyncTask(const QString& packTomlUrl, const QString& gameRoot, const QString& instanceRoot);
+// different (gameRoot, instanceRoot) directories and their own resolved Java binary.
+Task::Ptr createSyncTask(const QString& packTomlUrl, const QString& gameRoot, const QString& instanceRoot, const QString& javaPath);
 
 }  // namespace Packwiz

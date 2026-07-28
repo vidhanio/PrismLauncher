@@ -18,6 +18,7 @@
 
 #include "Application.h"
 #include "BuildConfig.h"
+#include "FileSystem.h"
 #include "InstanceImportTask.h"
 #include "InstanceList.h"
 #include "InstanceTask.h"
@@ -573,7 +574,8 @@ void PackwizManagedPackPage::update()
     }
 
     auto* instance = static_cast<MinecraftInstance*>(m_inst);
-    auto syncTask = Packwiz::createSyncTask(packTomlUrl, instance->gameRoot(), instance->instanceRoot());
+    auto javaPath = FS::ResolveExecutable(instance->settings()->get("JavaPath").toString());
+    auto syncTask = Packwiz::createSyncTask(packTomlUrl, instance->gameRoot(), instance->instanceRoot(), javaPath);
 
     connect(syncTask.get(), &Task::failed,
             [this](const QString& reason) { CustomMessageBox::selectable(this, tr("Error"), reason, QMessageBox::Critical)->show(); });

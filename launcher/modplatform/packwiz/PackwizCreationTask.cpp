@@ -71,7 +71,8 @@ std::unique_ptr<MinecraftInstance> CreationTask::createInstance()
     QEventLoop loop;
     bool success = false;
 
-    m_syncTask = createSyncTask(m_packTomlUrl, gameRoot, m_stagingPath);
+    auto javaPath = FS::ResolveExecutable(instance->settings()->get("JavaPath").toString());
+    m_syncTask = createSyncTask(m_packTomlUrl, gameRoot, m_stagingPath, javaPath);
     connect(m_syncTask.get(), &Task::succeeded, this, [&] {
         success = true;
         loop.quit();

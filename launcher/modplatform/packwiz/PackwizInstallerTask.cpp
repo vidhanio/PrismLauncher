@@ -25,7 +25,6 @@
 #include "Application.h"
 #include "FileSystem.h"
 #include "LoggedProcess.h"
-#include "java/JavaUtils.h"
 #include "modplatform/packwiz/PackwizMetadataTask.h"
 #include "net/Download.h"
 #include "tasks/SequentialTask.h"
@@ -36,8 +35,12 @@ namespace {
 const QUrl kBootstrapJarUrl{ "https://github.com/packwiz/packwiz-installer-bootstrap/releases/latest/download/packwiz-installer-bootstrap.jar" };
 }
 
-InstallerTask::InstallerTask(QString packTomlUrl, QString gameRoot, QString instanceRoot)
-    : Task(), m_packTomlUrl(std::move(packTomlUrl)), m_gameRoot(std::move(gameRoot)), m_instanceRoot(std::move(instanceRoot))
+InstallerTask::InstallerTask(QString packTomlUrl, QString gameRoot, QString instanceRoot, QString javaPath)
+    : Task()
+    , m_packTomlUrl(std::move(packTomlUrl))
+    , m_gameRoot(std::move(gameRoot))
+    , m_instanceRoot(std::move(instanceRoot))
+    , m_javaPath(std::move(javaPath))
 {}
 
 QString InstallerTask::cacheDir() const
@@ -78,15 +81,16 @@ void InstallerTask::fetchBootstrapJar()
 
 void InstallerTask::runInstaller()
 {
+    if (m_javaPath.isEmpty()) {
+        emitFailed(tr("Could not find a Java installation to run packwiz-installer"));
+        return;
+    }
+
     setStatus(tr("Syncing mods from packwiz pack..."));
     setProgress(0, 0);
 
     auto bootstrapPath = FS::PathCombine(cacheDir(), "packwiz-installer-bootstrap.jar");
     auto installerJarPath = FS::PathCombine(cacheDir(), "packwiz-installer.jar");
-
-    // The bootstrap tool only needs *some* working JRE to sync files with - it never launches
-    // Minecraft itself, so it doesn't need to match whatever Java the instance eventually uses
-    auto javaPath = JavaUtils().GetDefaultJava()->path;
 
     QStringList args{
         "-jar",       bootstrapPath,        "--no-gui",   "--bootstrap-main-jar",
@@ -134,7 +138,7 @@ void InstallerTask::runInstaller()
         }
     });
 
-    m_process->setProgram(javaPath);
+    m_process->setProgram(m_javaPath);
     m_process->setArguments(args);
     m_process->start();
 }
@@ -150,10 +154,10 @@ bool InstallerTask::abort()
     return Task::abort();
 }
 
-Task::Ptr createSyncTask(const QString& packTomlUrl, const QString& gameRoot, const QString& instanceRoot)
+Task::Ptr createSyncTask(const QString& packTomlUrl, const QString& gameRoot, const QString& instanceRoot, const QString& javaPath)
 {
     auto seq = makeShared<SequentialTask>(QObject::tr("Syncing packwiz pack"));
-    seq->addTask(makeShared<InstallerTask>(packTomlUrl, gameRoot, instanceRoot));
+    seq->addTask(makeShared<InstallerTask>(packTomlUrl, gameRoot, instanceRoot, javaPath));
     seq->addTask(makeShared<MetadataTask>(gameRoot, packTomlUrl));
     return seq;
 }
